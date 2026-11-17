@@ -7,8 +7,10 @@ import { spacing, type, radius } from '../../theme/theme';
 import { useTheme } from '../../theme/ThemeContext';
 import { api } from '../../api/client';
 import { apiErrorMessage } from '../../utils/ui';
+import { useTranslation } from 'react-i18next';
 
 export default function UserHomeScreen({ navigation }) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = makeStyles(colors);
   const [query, setQuery] = useState('');
@@ -44,7 +46,7 @@ export default function UserHomeScreen({ navigation }) {
       <Pressable onPress={() => navigation.navigate('ScanDrug')}>
         <LinearGradient colors={[colors.tealDeep, colors.green]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.scanCard}>
           <View style={styles.scanIconWrap}><Ionicons name="barcode-outline" size={28} color="#fff" /></View>
-          <View style={{ flex: 1 }}><Text style={styles.scanTitle}>Enter batch code</Text><Text style={styles.scanSub}>Camera scanning is not connected yet</Text></View>
+          <View style={{ flex: 1 }}><Text style={styles.scanTitle}>{t('scan.drugTitle')}</Text><Text style={styles.scanSub}>{t('scan.hint')}</Text></View>
           <Ionicons name="chevron-forward" size={20} color="#fff" />
         </LinearGradient>
       </Pressable>

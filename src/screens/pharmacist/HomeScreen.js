@@ -10,11 +10,13 @@ import { useTheme } from '../../theme/ThemeContext';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { apiErrorMessage } from '../../utils/ui';
+import { useTranslation } from 'react-i18next';
 
 const levelTone = { high: 'success', medium: 'warning', low: 'danger' };
 const levelLabel = { high: 'High', medium: 'Medium', low: 'Low' };
 
 export default function HomeScreen({ navigation }) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = makeStyles(colors);
   const { user } = useAuth();
@@ -43,7 +45,7 @@ export default function HomeScreen({ navigation }) {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ paddingBottom: 40 }}>
       <View style={styles.header}>
-        <View><Text style={styles.greeting}>Good morning,</Text><Text style={styles.name}>{(professional.name || 'Pharmacist').split(' ')[0]}</Text></View>
+        <View><Text style={styles.greeting}>{t('home.greeting')}</Text><Text style={styles.name}>{(professional.name || 'Pharmacist').split(' ')[0]}</Text></View>
         <Pressable onPress={() => navigation.navigate('Profile')} style={styles.avatar}><Text style={styles.avatarText}>{initials}</Text></Pressable>
       </View>
 
@@ -54,19 +56,19 @@ export default function HomeScreen({ navigation }) {
         <Pressable onPress={() => navigation.navigate('Expiry')}>
           <LinearGradient colors={['#7A1A16', colors.danger]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.alertBanner}>
             <Ionicons name="warning" size={20} color="#fff" />
-            <Text style={styles.alertText}>{soonCount} batch{soonCount > 1 ? 'es' : ''} need attention — expiring soon</Text>
+            <Text style={styles.alertText}>{t('home.attention', { count: soonCount })}</Text>
             <Ionicons name="chevron-forward" size={18} color="#fff" />
           </LinearGradient>
         </Pressable>
       )}
 
       <View style={styles.statsRow}>
-        <Card style={styles.statCard}><Ionicons name="cube-outline" size={20} color={colors.greenLight} /><Text style={styles.statValue}>{data?.totalBatches ?? '—'}</Text><Text style={styles.statLabel}>Batches in store</Text></Card>
-        <Card style={styles.statCard}><Ionicons name="layers-outline" size={20} color={colors.info} /><Text style={styles.statValue}>{data?.totalUnits ?? '—'}</Text><Text style={styles.statLabel}>Units total</Text></Card>
-        <Card style={styles.statCard}><Ionicons name="alert-circle-outline" size={20} color={colors.danger} /><Text style={styles.statValue}>{data ? soonCount : '—'}</Text><Text style={styles.statLabel}>Expiring soon</Text></Card>
+        <Card style={styles.statCard}><Ionicons name="cube-outline" size={20} color={colors.greenLight} /><Text style={styles.statValue}>{data?.totalBatches ?? '—'}</Text><Text style={styles.statLabel}>{t('home.batches')}</Text></Card>
+        <Card style={styles.statCard}><Ionicons name="layers-outline" size={20} color={colors.info} /><Text style={styles.statValue}>{data?.totalUnits ?? '—'}</Text><Text style={styles.statLabel}>{t('home.units')}</Text></Card>
+        <Card style={styles.statCard}><Ionicons name="alert-circle-outline" size={20} color={colors.danger} /><Text style={styles.statValue}>{data ? soonCount : '—'}</Text><Text style={styles.statLabel}>{t('home.expiring')}</Text></Card>
       </View>
 
-      <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Sales level by drug</Text><Pressable onPress={() => navigation.navigate('Sales')}><Text style={styles.sectionLink}>See sales</Text></Pressable></View>
+      <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>{t('home.salesLevel')}</Text><Pressable onPress={() => navigation.navigate('Sales')}><Text style={styles.sectionLink}>{t('home.seeSales')}</Text></Pressable></View>
       <Card style={{ gap: 0 }}>
         {(data?.salesLevels || []).length ? data.salesLevels.map((sale, index) => (
           <View key={sale.drugName} style={[styles.salesRow, index !== data.salesLevels.length - 1 && styles.salesRowBorder]}>

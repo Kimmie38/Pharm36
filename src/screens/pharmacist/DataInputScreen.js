@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Input from '../../components/Input';
@@ -10,14 +10,20 @@ import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { apiErrorMessage, showMessage } from '../../utils/ui';
 import { drugCategories as fallbackCategories } from '../../data/mockData';
+import { useTranslation } from 'react-i18next';
+import { useSync } from '../../offline/SyncContext';
+import { newClientId } from '../../offline/outbox';
 
 const REMINDERS = ['1 year', '6 months', '3 months', '1 month', '2 weeks', '1 week'];
 
 export default function DataInputScreen({ navigation }) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = makeStyles(colors);
   const { user } = useAuth();
-  const [form, setForm] = useState({ drugName: '', manufactureDate: '', expiryDate: '', price: '', quantity: '', batchCode: '', manufacturer: '', strength: '', form: '' });
+  const { queueWrite } = useSync();
+  const clientId = useRef(newClientId());
+  const [form, setForm] = useState({ drugName: '', manufactureDate: '', expiryDate: '', price: '', quantity: '', batchCode: '', manufacturer: '', strength: '', form: '', nafdacNo: '' });
   const [reminder, setReminder] = useState(user?.settings?.defaultReminder || '1 month');
   const [category, setCategory] = useState('general');
   const [loading, setLoading] = useState(false);
@@ -31,11 +37,13 @@ export default function DataInputScreen({ navigation }) {
   const handleSave = async () => {
     if (!isAllowed) return showMessage('Category restricted', `This account needs council-confirmed section access to add ${selectedCategory?.label || 'this category'}.`);
     if (!form.drugName.trim() || !form.expiryDate.trim() || !form.batchCode.trim() || !form.quantity.trim()) {
-      return showMessage('Missing details', 'Enter the drug name, batch code, expiry date, and quantity.');
+      return showMessage(t('add.missingTitle'), t('add.missing'));
     }
     setLoading(true);
     try {
-      await api.post('batches', {
+      const payload = {
+        clientId: clientId.current,
+        nafdacNo: form.nafdacNo.trim() || undefined,
         drugName: form.drugName.trim(),
         category,
         batchCode: form.batchCode.trim(),
@@ -47,8 +55,16 @@ export default function DataInputScreen({ navigation }) {
         manufacturer: form.manufacturer.trim() || undefined,
         strength: form.strength.trim() || undefined,
         form: form.form.trim() || undefined,
-      });
-      showMessage('Batch saved', `${form.drugName} has been added to your inventory.`);
+      };
+      try {
+        await api.post('batches', payload);
+        showMessage(t('add.savedTitle'), t('add.savedBody', { name: form.drugName }));
+      } catch (error) {
+        if (error?.status !== 0) throw error;
+        // Offline: keep it on the phone; the same clientId makes the later upload safe to retry.
+        await queueWrite({ path: 'batches', method: 'POST', body: payload, label: form.drugName });
+        showMessage(t('add.queuedTitle'), t('add.queuedBody', { name: form.drugName }));
+      }
       navigation.goBack();
     } catch (error) {
       showMessage('Could not save batch', apiErrorMessage(error));
@@ -59,9 +75,9 @@ export default function DataInputScreen({ navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScreenHeader title="Add drug batch" subtitle="Record a new batch entering your store" onBack={() => navigation.goBack()} />
+      <ScreenHeader title={t('add.title')} subtitle={t('add.subtitle')} onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">
-        <Text style={styles.label}>Drug category</Text>
+        <Text style={styles.label}>{t('add.category')}</Text>
         <View style={styles.categoryRow}>
           {categories.map((item) => {
             const locked = !item.allowed;
@@ -81,20 +97,22 @@ export default function DataInputScreen({ navigation }) {
           </View>
         )}
 
-        <Text style={styles.label}>Batch code</Text>
+        <Text style={styles.label}>{t('add.batchCode')}</Text>
         <Pressable style={styles.scanBox} onPress={handleScan}>
-          {form.batchCode ? <><Ionicons name="checkmark-circle" size={20} color={colors.success} /><Text style={styles.scanCode}>{form.batchCode}</Text><Text style={styles.rescan}>Enter / rescan</Text></> : <><View style={styles.scanIconWrap}><Ionicons name="barcode-outline" size={22} color={colors.greenLight} /></View><View style={{ flex: 1 }}><Text style={styles.scanTitle}>Enter batch barcode</Text><Text style={styles.scanSub}>Camera scanning is not connected yet</Text></View><Ionicons name="chevron-forward" size={20} color={colors.textMuted} /></>}
+          {form.batchCode ? <><Ionicons name="checkmark-circle" size={20} color={colors.success} /><Text style={styles.scanCode}>{form.batchCode}</Text><Text style={styles.rescan}>{t('add.rescan')}</Text></> : <><View style={styles.scanIconWrap}><Ionicons name="barcode-outline" size={22} color={colors.greenLight} /></View><View style={{ flex: 1 }}><Text style={styles.scanTitle}>{t('add.scanTitle')}</Text><Text style={styles.scanSub}>{t('add.scanSub')}</Text></View><Ionicons name="chevron-forward" size={20} color={colors.textMuted} /></>}
         </Pressable>
-        <Input label="Batch code (manual entry)" placeholder="e.g. 5012345678901" value={form.batchCode} onChangeText={update('batchCode')} icon="barcode-outline" autoCapitalize="none" />
-        <Input label="Drug name" placeholder="e.g. Amoxicillin 500mg" value={form.drugName} onChangeText={update('drugName')} icon="medical-outline" />
-        <Input label="Manufacturer (optional)" placeholder="Manufacturer" value={form.manufacturer} onChangeText={update('manufacturer')} icon="business-outline" />
-        <View style={styles.dateRow}><View style={{ flex: 1 }}><Input label="Strength (optional)" placeholder="500mg" value={form.strength} onChangeText={update('strength')} /></View><View style={{ width: spacing.sm }} /><View style={{ flex: 1 }}><Input label="Form (optional)" placeholder="Capsule" value={form.form} onChangeText={update('form')} /></View></View>
-        <View style={styles.dateRow}><View style={{ flex: 1 }}><Input label="Manufacture date" placeholder="YYYY-MM-DD" value={form.manufactureDate} onChangeText={update('manufactureDate')} icon="calendar-outline" /></View><View style={{ width: spacing.sm }} /><View style={{ flex: 1 }}><Input label="Expiry date" placeholder="YYYY-MM-DD" value={form.expiryDate} onChangeText={update('expiryDate')} icon="calendar-outline" /></View></View>
-        <View style={styles.dateRow}><View style={{ flex: 1 }}><Input label="Price per unit (₦)" placeholder="0.00" value={form.price} onChangeText={update('price')} icon="cash-outline" keyboardType="numeric" /></View><View style={{ width: spacing.sm }} /><View style={{ flex: 1 }}><Input label="Quantity" placeholder="0" value={form.quantity} onChangeText={update('quantity')} icon="layers-outline" keyboardType="numeric" /></View></View>
-        <Text style={styles.label}>Extra reminder before the 1-month/2-week alerts</Text>
+        <Input label={t('add.manual')} placeholder="e.g. 5012345678901" value={form.batchCode} onChangeText={update('batchCode')} icon="barcode-outline" autoCapitalize="none" />
+        <Input label={t('add.nafdac')} placeholder="A4-1234" value={form.nafdacNo} onChangeText={update('nafdacNo')} icon="shield-checkmark-outline" autoCapitalize="characters" />
+        <Text style={styles.hint}>{t('add.nafdacHint')}</Text>
+        <Input label={t('add.drugName')} placeholder="e.g. Amoxicillin 500mg" value={form.drugName} onChangeText={update('drugName')} icon="medical-outline" />
+        <Input label={t('add.manufacturer')} placeholder="Manufacturer" value={form.manufacturer} onChangeText={update('manufacturer')} icon="business-outline" />
+        <View style={styles.dateRow}><View style={{ flex: 1 }}><Input label={t('add.strength')} placeholder="500mg" value={form.strength} onChangeText={update('strength')} /></View><View style={{ width: spacing.sm }} /><View style={{ flex: 1 }}><Input label={t('add.form')} placeholder="Capsule" value={form.form} onChangeText={update('form')} /></View></View>
+        <View style={styles.dateRow}><View style={{ flex: 1 }}><Input label={t('add.mfgDate')} placeholder="YYYY-MM-DD" value={form.manufactureDate} onChangeText={update('manufactureDate')} icon="calendar-outline" /></View><View style={{ width: spacing.sm }} /><View style={{ flex: 1 }}><Input label={t('add.expDate')} placeholder="YYYY-MM-DD" value={form.expiryDate} onChangeText={update('expiryDate')} icon="calendar-outline" /></View></View>
+        <View style={styles.dateRow}><View style={{ flex: 1 }}><Input label={t('add.price')} placeholder="0.00" value={form.price} onChangeText={update('price')} icon="cash-outline" keyboardType="numeric" /></View><View style={{ width: spacing.sm }} /><View style={{ flex: 1 }}><Input label={t('add.quantity')} placeholder="0" value={form.quantity} onChangeText={update('quantity')} icon="layers-outline" keyboardType="numeric" /></View></View>
+        <Text style={styles.label}>{t('add.reminder')}</Text>
         <View style={styles.reminderRow}>{REMINDERS.map((value) => <Pressable key={value} onPress={() => setReminder(value)} style={[styles.chip, reminder === value && styles.chipActive]}><Text style={[styles.chipText, reminder === value && styles.chipTextActive]}>{value}</Text></Pressable>)}</View>
-        <Text style={styles.hint}>Pharm36 always alerts at 1 month and 2 weeks before expiry — this sets an earlier heads-up too.</Text>
-        <Button label={loading ? 'Saving…' : isAllowed ? 'Save Batch' : 'Category restricted'} onPress={handleSave} disabled={!isAllowed || loading} loading={loading} style={{ marginTop: spacing.xl }} />
+        <Text style={styles.hint}>{t('add.reminderHint')}</Text>
+        <Button label={loading ? t('add.saving') : isAllowed ? t('add.save') : 'Category restricted'} onPress={handleSave} disabled={!isAllowed || loading} loading={loading} style={{ marginTop: spacing.xl }} />
       </ScrollView>
     </View>
   );

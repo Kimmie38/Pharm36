@@ -8,8 +8,10 @@ import { useTheme } from '../../theme/ThemeContext';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { apiErrorMessage, showMessage } from '../../utils/ui';
+import { useTranslation } from 'react-i18next';
 
 export default function LoginScreen({ navigation }) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = makeStyles(colors);
   const { login } = useAuth();
@@ -85,18 +87,18 @@ export default function LoginScreen({ navigation }) {
           <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
         </Pressable>
         <Image source={require('../../../assets/images/logo.png')} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.title}>Welcome back</Text>
-        <Text style={styles.subtitle}>Log in to manage your pharmacy</Text>
+        <Text style={styles.title}>{t('login.welcomeBack')}</Text>
+        <Text style={styles.subtitle}>{t('login.sub')}</Text>
         <View style={{ marginTop: spacing.xl, width: '100%' }}>
-          <Input label="Phone number or email" placeholder="you@pharmacy.com" value={identifier} onChangeText={setIdentifier} icon="person-outline" autoCapitalize="none" />
-          <Input label="Password" placeholder="••••••••" value={password} onChangeText={setPassword} icon="lock-closed-outline" secureTextEntry />
+          <Input label={t('login.identifier')} placeholder="you@pharmacy.com" value={identifier} onChangeText={setIdentifier} icon="person-outline" autoCapitalize="none" />
+          <Input label={t('login.password')} placeholder="••••••••" value={password} onChangeText={setPassword} icon="lock-closed-outline" secureTextEntry />
           <Pressable style={{ alignSelf: 'flex-end', marginBottom: spacing.lg }} onPress={() => { setForgotIdentifier(identifier); setForgotOpen(true); }}>
-            <Text style={styles.forgot}>Forgot password?</Text>
+            <Text style={styles.forgot}>{t('login.forgot')}</Text>
           </Pressable>
-          <Button label="Log In" onPress={handleLogin} loading={loading} />
+          <Button label={t('login.logIn')} onPress={handleLogin} loading={loading} />
           <View style={styles.signupRow}>
-            <Text style={styles.signupText}>New to Pharm36? </Text>
-            <Pressable onPress={() => navigation.navigate('Register')}><Text style={styles.signupLink}>Create an account</Text></Pressable>
+            <Text style={styles.signupText}>{t('login.newTo')}</Text>
+            <Pressable onPress={() => navigation.navigate('Register')}><Text style={styles.signupLink}>{t('login.create')}</Text></Pressable>
           </View>
         </View>
       </ScrollView>

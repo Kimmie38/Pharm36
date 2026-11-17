@@ -1,5 +1,14 @@
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const CACHE_PREFIX = 'pharm36.cache.v1:';
+export async function clearApiCache() {
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    await AsyncStorage.multiRemove(keys.filter((k) => k.startsWith(CACHE_PREFIX)));
+  } catch { /* nothing to clear */ }
+}
 
 const TOKEN_KEY = 'pharm36.auth.token';
 const defaultBaseUrl = 'https://pharm36-backend.onrender.com/api';
@@ -41,6 +50,7 @@ export async function getAuthToken() {
 }
 
 export async function setAuthToken(token) {
+  if (!token) clearApiCache();
   memoryToken = token || null;
   tokenLoaded = true;
   await writeToken(memoryToken);
@@ -77,6 +87,7 @@ export async function request(path, options = {}) {
   if (body !== undefined) requestHeaders['Content-Type'] = 'application/json';
   if (token) requestHeaders.Authorization = `Bearer ${token}`;
 
+  const cacheKey = `${CACHE_PREFIX}${path}${queryString(query)}`;
   let response;
   try {
     response = await fetch(`${API_BASE_URL}/${path.replace(/^\/+/, '')}${queryString(query)}`, {
@@ -85,6 +96,13 @@ export async function request(path, options = {}) {
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch (error) {
+    // Offline: serve the last good copy of this screen's data instead of an error.
+    if (method === 'GET' && auth) {
+      try {
+        const cached = await AsyncStorage.getItem(cacheKey);
+        if (cached) return { ...JSON.parse(cached), __offline: true };
+      } catch { /* fall through to the error below */ }
+    }
     throw new ApiError(`Cannot reach Pharm36 API at ${API_BASE_URL}. Check that the backend is running and the URL is reachable from this device.`, 0, { cause: error?.message });
   }
 
@@ -96,6 +114,7 @@ export async function request(path, options = {}) {
     }
     throw new ApiError(data?.error || `Request failed (${response.status})`, response.status, data?.details);
   }
+  if (method === 'GET' && auth && data && typeof data === 'object') AsyncStorage.setItem(cacheKey, JSON.stringify(data)).catch(() => {});
   return data;
 }
 

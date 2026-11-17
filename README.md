@@ -14,3 +14,14 @@ For Expo Web, use `npx expo start --web`; Expo Go or a simulator can be used for
 ## Current boundaries
 
 Barcode screens use manual batch-code entry until camera capture is implemented. Marketplace orders record stock transfers but do not process payments. Production password-reset delivery requires an SMS/email provider.
+
+## New in this update
+
+- **Languages:** English, Hausa, Yorùbá, Igbo (`src/i18n/`). Picker on the first screen and in Profile. Core screens are translated (role select, login, tabs, home, add batch, scanning, sticker, recall warnings); the rest still show English. Have native speakers review the medical wording before release.
+- **Camera barcode scan:** `src/components/CodeCapture.js` (expo-camera) with typed-code fallback, for both the pharmacist and consumer flows.
+- **Offline-first:** GET responses are cached and served when the network is down; new batches are queued (`src/offline/`) and uploaded automatically with a client-generated id so retries never create duplicates. A banner shows what is waiting.
+- **Verified pharmacy sticker:** Profile → "Verified pharmacy sticker" shows a printable QR that opens the backend page `/p/<id>` (live registration status).
+- **NAFDAC number** field on add-batch; buyers are told when a batch has none. **Recalls** show a red "RECALLED" result to buyers.
+
+Install note: this project uses `legacy-peer-deps` (see `.npmrc`) because React Native 0.88 is a release candidate. After pulling, run `npm install`. If you use pnpm, regenerate `pnpm-lock.yaml`.
+Rebuild native apps (`npx expo prebuild` / EAS) so the camera permission is included.

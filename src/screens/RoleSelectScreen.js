@@ -4,16 +4,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { spacing, type, radius } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
+import LanguagePicker from '../components/LanguagePicker';
 
 export default function RoleSelectScreen({ navigation }) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = makeStyles(colors);
   return (
     <View style={styles.container}>
       <View style={styles.top}>
         <Image source={require('../../assets/images/logo.png')} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.title}>Welcome to Pharm36</Text>
-        <Text style={styles.subtitle}>Genuine medicine. Verified professionals.</Text>
+        <Text style={styles.title}>{t('roleSelect.welcome')}</Text>
+        <Text style={styles.subtitle}>{t('roleSelect.tagline')}</Text>
       </View>
 
       <View style={styles.cards}>
@@ -23,8 +26,8 @@ export default function RoleSelectScreen({ navigation }) {
               <Ionicons name="medkit" size={26} color="#fff" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.roleTitle}>Pharmacist or Vet</Text>
-              <Text style={styles.roleSub}>Manage inventory, track expiry & sell</Text>
+              <Text style={styles.roleTitle}>{t('roleSelect.proTitle')}</Text>
+              <Text style={styles.roleSub}>{t('roleSelect.proSub')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={22} color="#fff" />
           </LinearGradient>
@@ -35,14 +38,15 @@ export default function RoleSelectScreen({ navigation }) {
             <Ionicons name="scan" size={24} color={colors.greenLight} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.roleTitle, { color: colors.textPrimary }]}>I'm Buying Medicine</Text>
-            <Text style={[styles.roleSub, { color: colors.textSecondary }]}>Check a drug before you buy</Text>
+            <Text style={[styles.roleTitle, { color: colors.textPrimary }]}>{t('roleSelect.buyTitle')}</Text>
+            <Text style={[styles.roleSub, { color: colors.textSecondary }]}>{t('roleSelect.buySub')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={22} color={colors.textSecondary} />
         </Pressable>
       </View>
 
-      <Text style={styles.footer}>Registered with the Pharmacists Council of Nigeria (PCN) & Veterinary Council of Nigeria (VCN)</Text>
+      <LanguagePicker style={{ marginBottom: 12 }} />
+      <Text style={styles.footer}>{t('roleSelect.footer')}</Text>
     </View>
   );
 }

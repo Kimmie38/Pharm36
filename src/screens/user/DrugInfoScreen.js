@@ -9,6 +9,7 @@ import { spacing, type, radius } from '../../theme/theme';
 import { useTheme } from '../../theme/ThemeContext';
 import { api } from '../../api/client';
 import { apiErrorMessage, showMessage } from '../../utils/ui';
+import { useTranslation } from 'react-i18next';
 
 const REASONS = [
   ['suspected_fake', 'Suspected fake'], ['expired', 'Expired'], ['damaged_seal', 'Damaged seal'],
@@ -22,6 +23,7 @@ const LABEL_SECTIONS = [
 ];
 
 export default function DrugInfoScreen({ navigation, route }) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = makeStyles(colors);
   const { batchCode: rawBatchCode, name: rawName } = route.params || {};
@@ -136,10 +138,11 @@ export default function DrugInfoScreen({ navigation, route }) {
 
       {batchCode ? (
         <>
-          <LinearGradient colors={found ? [colors.tealDeep, colors.green] : ['#7A1A16', colors.danger]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.verifyBanner}>
+          <LinearGradient colors={found && !record?.recalled ? [colors.tealDeep, colors.green] : ['#7A1A16', colors.danger]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.verifyBanner}>
             <Ionicons name={found ? 'document-text' : 'warning'} size={30} color="#fff" />
-            <Text style={styles.verifyTitle}>{found ? 'Registered record found' : 'No registered record'}</Text>
+            <Text style={styles.verifyTitle}>{record?.recalled ? t('recall.title') : found ? 'Registered record found' : 'No registered record'}</Text>
             <Text style={styles.verifySub}>{record?.summary || 'The registry could not be checked just now.'}</Text>
+            {found && record?.flags?.includes('no_nafdac_number') ? <Text style={[styles.verifySub, { marginTop: 8 }]}>{t('recall.noNafdac')}</Text> : null}
           </LinearGradient>
           {found && <Card style={styles.card}>
             <View style={styles.drugTop}><View style={{ flex: 1 }}><Text style={styles.drugName}>{drug.name || 'Drug record'}</Text><Text style={styles.drugStrength}>{[drug.strength, drug.form].filter(Boolean).join(' · ')}</Text></View><Badge label={expiryLabel} tone={status === 'expired' || status === 'expiring_2w' ? 'danger' : status === 'expiring_1m' ? 'warning' : 'success'} /></View>

@@ -12,6 +12,9 @@ import BatchDetailScreen from '../screens/pharmacist/BatchDetailScreen';
 import ExpiryScreen from '../screens/pharmacist/ExpiryScreen';
 import SalesScreen from '../screens/pharmacist/SalesScreen';
 import ProfileScreen from '../screens/pharmacist/ProfileScreen';
+import StickerScreen from '../screens/pharmacist/StickerScreen';
+import SyncBanner from '../components/SyncBanner';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../theme/ThemeContext';
 import { api } from '../api/client';
 
@@ -19,6 +22,14 @@ const Tab = createBottomTabNavigator();
 const InventoryStack = createNativeStackNavigator();
 const HStack = createNativeStackNavigator();
 const ExpiryStack = createNativeStackNavigator();
+const ProfileStack = createNativeStackNavigator();
+
+function ProfileStackNavigator() {
+  return <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
+    <ProfileStack.Screen name="ProfileHome" component={ProfileScreen} />
+    <ProfileStack.Screen name="Sticker" component={StickerScreen} />
+  </ProfileStack.Navigator>;
+}
 
 function InventoryStackNavigator() {
   return <InventoryStack.Navigator screenOptions={{ headerShown: false }}>
@@ -38,6 +49,7 @@ function HomeStackNavigator() {
     <HStack.Screen name="Sales" component={SalesScreen} />
     <HStack.Screen name="Expiry" component={ExpiryScreen} />
     <HStack.Screen name="Profile" component={ProfileScreen} />
+    <HStack.Screen name="Sticker" component={StickerScreen} />
   </HStack.Navigator>;
 }
 function ExpiryStackNavigator() {
@@ -48,6 +60,7 @@ function ExpiryStackNavigator() {
 }
 
 function ExpiryTabButton({ onPress, accessibilityState, count }) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = makeButtonStyles(colors);
   const focused = accessibilityState?.selected;
@@ -68,11 +81,12 @@ function ExpiryTabButton({ onPress, accessibilityState, count }) {
   return <Pressable onPress={onPress} style={styles.wrap} hitSlop={8}>
     <View style={styles.ringAnchor}><Animated.View style={[styles.ring, ringStyle(pulse1)]} /><Animated.View style={[styles.ring, ringStyle(pulse2)]} /><View style={styles.core}><Ionicons name="alert-circle" size={26} color="#fff" /></View>
       {count > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{count > 99 ? '99+' : count}</Text></View>}
-    </View><Text style={[styles.label, focused && styles.labelActive]}>Expiry</Text>
+    </View><Text style={[styles.label, focused && styles.labelActive]}>{t('tabs.expiry')}</Text>
   </Pressable>;
 }
 
 export default function PharmacistTabs() {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = makeStyles(colors);
   const [expiringCount, setExpiringCount] = useState(0);
@@ -89,7 +103,7 @@ export default function PharmacistTabs() {
     return () => { active = false; clearInterval(timer); };
   }, []);
 
-  return <Tab.Navigator screenOptions={({ route }) => ({
+  return <View style={{ flex: 1 }}><SyncBanner /><Tab.Navigator screenOptions={({ route }) => ({
     headerShown: false,
     tabBarStyle: styles.tabBar,
     tabBarActiveTintColor: colors.greenLight,
@@ -100,12 +114,12 @@ export default function PharmacistTabs() {
       return <Ionicons name={icons[route.name]} size={22} color={color} />;
     },
   })}>
-    <Tab.Screen name="Home" component={HomeStackNavigator} />
-    <Tab.Screen name="Inventory" component={InventoryStackNavigator} />
+    <Tab.Screen name="Home" component={HomeStackNavigator} options={{ tabBarLabel: t('tabs.home') }} />
+    <Tab.Screen name="Inventory" component={InventoryStackNavigator} options={{ tabBarLabel: t('tabs.inventory') }} />
     <Tab.Screen name="Expiry" component={ExpiryStackNavigator} options={{ tabBarButton: (props) => <ExpiryTabButton {...props} count={expiringCount} /> }} />
-    <Tab.Screen name="Sales" component={SalesScreen} />
-    <Tab.Screen name="Profile" component={ProfileScreen} />
-  </Tab.Navigator>;
+    <Tab.Screen name="Sales" component={SalesScreen} options={{ tabBarLabel: t('tabs.sales') }} />
+    <Tab.Screen name="Profile" component={ProfileStackNavigator} options={{ tabBarLabel: t('tabs.profile') }} />
+  </Tab.Navigator></View>;
 }
 
 const makeStyles = (colors) => StyleSheet.create({ tabBar: { backgroundColor: colors.bgElevated, borderTopColor: colors.border, height: 84, paddingTop: 8 } });

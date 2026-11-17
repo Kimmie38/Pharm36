@@ -1,3 +1,4 @@
+import './src/i18n';
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
@@ -11,6 +12,7 @@ import RegisterScreen from './src/screens/pharmacist/RegisterScreen';
 import PharmacistTabs from './src/navigation/PharmacistTabs';
 import UserStack from './src/navigation/UserStack';
 import { AuthProvider } from './src/auth/AuthContext';
+import { SyncProvider } from './src/offline/SyncContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
 const Stack = createNativeStackNavigator();
@@ -60,9 +62,11 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <ThemeProvider initialScheme="dark">
-          <RootNavigator />
-        </ThemeProvider>
+        <SyncProvider>
+          <ThemeProvider initialScheme="dark">
+            <RootNavigator />
+          </ThemeProvider>
+        </SyncProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

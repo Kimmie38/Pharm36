@@ -10,10 +10,13 @@ import { useTheme } from '../../theme/ThemeContext';
 import { useAuth } from '../../auth/AuthContext';
 import { api, setAuthToken } from '../../api/client';
 import { apiErrorMessage, showMessage } from '../../utils/ui';
+import { useTranslation } from 'react-i18next';
+import LanguagePicker from '../../components/LanguagePicker';
 
 const REMINDERS = ['1 year', '6 months', '3 months', '1 month', '2 weeks', '1 week'];
 
 export default function ProfileScreen({ navigation }) {
+  const { t } = useTranslation();
   const { colors, isDark, toggleTheme } = useTheme();
   const { user, logout, refreshUser, setUser } = useAuth();
   const styles = makeStyles(colors);
@@ -97,6 +100,9 @@ export default function ProfileScreen({ navigation }) {
       </View>
 
       <View style={{ marginTop: spacing.lg, marginHorizontal: spacing.lg }}>
+        <Text style={styles.sectionLabel}>{t('profile.language')}</Text>
+        <LanguagePicker style={{ justifyContent: 'flex-start', marginBottom: spacing.md }} />
+        <Pressable style={[styles.menuRow, { marginBottom: spacing.md }]} onPress={() => navigation.navigate('Sticker')}><View style={styles.menuIcon}><Ionicons name="qr-code-outline" size={18} color={colors.greenLight} /></View><Text style={styles.menuLabel}>{t('sticker.menu')}</Text><Ionicons name="chevron-forward" size={18} color={colors.textMuted} /></Pressable>
         <Text style={styles.sectionLabel}>Appearance</Text>
         <View style={styles.themeRow}><View style={styles.menuIcon}><Ionicons name={isDark ? 'moon' : 'sunny'} size={18} color={colors.greenLight} /></View><View style={{ flex: 1 }}><Text style={styles.menuLabel}>Dark mode</Text><Text style={styles.menuSub}>{isDark ? 'On — easier on the eyes at night' : 'Off — bright, high-contrast look'}</Text></View><Switch value={isDark} onValueChange={toggleTheme} trackColor={{ false: colors.border, true: colors.green }} thumbColor="#fff" /></View>
       </View>
