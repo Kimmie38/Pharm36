@@ -1,3 +1,9 @@
 riuf
 node_modules
 node_modules
+
+# Expo
+.expo/
+
+# Local env overrides
+.env*.local
